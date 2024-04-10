@@ -10,34 +10,34 @@ import uuid
 
 # 1.0 - FILES CONSOLIDATION
 
-# years=["2021", "2022", "2023"]
+years=["2021", "2022", "2023"]
 
-# main_df=pd.DataFrame()
+main_df=pd.DataFrame()
 
-# for year in years[:1]:
-#     for file in os.listdir(f"{year}"):
-#         if re.search(r"summary", file, re.IGNORECASE):
-#             df=pd.read_csv(f"./{year}/{file}")
-#             # drop extra columns 
-#             for col in df.columns:
-#                 if re.search(r"unnamed", col, re.IGNORECASE):
-#                     df.drop(columns=col, inplace=True)
+for year in years:
+    for file in os.listdir(f"{year}"):
+        if re.search(r"summary", file, re.IGNORECASE):
+            df=pd.read_csv(f"./{year}/{file}")
+            # drop extra columns 
+            for col in df.columns:
+                if re.search(r"unnamed", col, re.IGNORECASE):
+                    df.drop(columns=col, inplace=True)
                    
-#             # strip symbols, left/right spaces
-#             df.columns=[re.sub(r"[^\w\d\s]", "", col.lstrip().rstrip()) for col in df.columns]
+            # strip symbols, left/right spaces
+            df.columns=[re.sub(r"[^\w\d\s]", "", col.lstrip().rstrip()) for col in df.columns]
     
-#             # extract date from filename
-#             df["dateRange"]=re.search(r"(\d+.\d+)", file).group(0)
+            # extract date from filename
+            df["dateRange"]=re.search(r"(\d+.\d+)", file).group(0)
 
-#             main_df=main_df._append(df)
+            main_df=main_df._append(df)
 
-#             print(df.columns)
-#     path=f"./clean"
+            print(df.columns)
+    path=f"./clean"
 
-# # export
-# if not os.path.exists(path):
-#     os.mkdir(path)
-# main_df.to_csv(f"{path}/consolidated_summary(2021-2023).csv", index=False)
+# export
+if not os.path.exists(path):
+    os.mkdir(path)
+main_df.to_csv(f"{path}/consolidated_summary(2021-2023).csv", index=False)
 
 # 02 - DATA CLEANING
 main_df=pd.read_csv("./clean/consolidated_summary(2021-2023).csv")
@@ -101,7 +101,14 @@ def DistrictMatch(x:str, districts:dict=dist_map, score=score_config)-> tuple:
     else:
         return x, np.nan
 
+main_df["location.admin.hierarchy"]=""
+main_df["location.ulb.ID"]=""
+main_df["location.ulb.name"]=""
 main_df["location.district.name"]=main_df["location.district.name"].apply(lambda x: re.sub(r"[^\w\s]","", x.lstrip().rstrip().upper()))
+main_df["location.district.name"]=main_df["location.district.name"].apply(lambda x: re.sub(r"[^\w\s]","", x.lstrip().rstrip().upper()))
+main_df.loc[main_df["location.district.name"]=="BBMP", "location.ulb.name"]="BBMP"
+main_df.loc[main_df["location.district.name"]=="BBMP", "location.ulb.ID"]="ulb_276600"
+main_df.loc[main_df["location.district.name"]=="BBMP", "location.district.name"]="BENGALURU URBAN"
 
 match=main_df["location.district.name"].apply(lambda x: DistrictMatch(x))
 
@@ -133,6 +140,8 @@ cols_add=set(master_cols) - set(main_df.columns)
 for col in cols_add:
     main_df[col]=master_col_vals[col]
 
+main_df.loc[main_df["location.ulb.name"]=="BBMP", "location.admin.hierarchy"]="ULB"
+main_df.loc[main_df["location.ulb.name"]!="BBMP", "location.admin.hierarchy"]="REVENUE"
 
 # fixing date vars
     
@@ -141,8 +150,8 @@ main_df["dateRange"]=main_df["dateRange"].str.split("_")
 def date_time_set(x: list) -> tuple:
     start_date=x[0]
     end_date=x[1]
-    start_date=datetime.datetime(day=int(x[0][:2]), month=int(x[0][2:4]), year=int(x[0][4:8])).isoformat()
-    end_date=datetime.datetime(day=int(x[1][:2]), month=int(x[1][2:4]), year=int(x[1][4:8])).isoformat()
+    start_date=datetime.date(day=int(x[0][:2]), month=int(x[0][2:4]), year=int(x[0][4:8])).isoformat()
+    end_date=datetime.date(day=int(x[1][:2]), month=int(x[1][2:4]), year=int(x[1][4:8])).isoformat()
 
     return([start_date, end_date], end_date)
 
@@ -183,7 +192,7 @@ main_df["survey.containerIndex.calc"]=(main_df["survey.containersPositive"]/main
 main_df["survey.breteauIndex.calc"]=(main_df["survey.containersPositive"]/main_df["survey.housesVisited"]) * 100
 
 # rounding-up int cols
-int_cols=['summary.NoOfTaluks', 'summary.NoOfPhcs','summary.NoOfHouses', 'survey.housesVisited', 'survey.housesPositive','survey.containersSearched', 'survey.containersPositive', 'survey.containersReduced']
+int_cols=['summary.noOfTaluks', 'summary.noOfPhcs','summary.noOfHouses', 'survey.housesVisited', 'survey.housesPositive','survey.containersSearched', 'survey.containersPositive', 'survey.containersReduced']
 
 for col in int_cols:
     main_df[col]=main_df[col].round(0)
