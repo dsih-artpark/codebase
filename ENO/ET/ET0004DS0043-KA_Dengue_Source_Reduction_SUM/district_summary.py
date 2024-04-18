@@ -203,6 +203,11 @@ float_cols=['survey.houseIndex', 'survey.containerIndex', 'survey.breteauIndex',
 for col in float_cols:
     main_df[col]=main_df[col].round(2)
 
+# nullifying invalid 0's
+main_df.loc[main_df["survey.housesVisited"].isna(),"survey.houseIndex"]=np.nan
+main_df.loc[main_df["survey.containersSearched"].isna(),"survey.containerIndex"]=np.nan
+main_df.loc[main_df["survey.housesVisited"].isna(),"survey.breteauIndex"]=np.nan
+
 # creating uuids
 main_df["metadata.recordID"]=[uuid.uuid4() for i in range(len(main_df))]
 
