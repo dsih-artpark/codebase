@@ -22,13 +22,13 @@ CURRENT_YEAR=int(input("Enter the year of the file (integer)"))
 
 # get regions.csv
 s3 = boto3.client('s3')
-bucket_name = 'your_bucket_name'
-object_key = 'path/to/your/dataset.csv'
+bucket_name = 'dsih-artpark-03-standardised-data'
+file_path = 'GS0015DS0034-LGD_Region_IDs_and_Names/regionids.csv'
 
 try:
-    s3.download_file(bucket_name, object_key)
+    s3.download_file(bucket_name, file_path)
 except Exception as e:
-    print(f'Error downloading dataset: {e}')
+    print(f'File did not download: {e}')
 
 regions=pd.read_csv("regions.csv")
 
