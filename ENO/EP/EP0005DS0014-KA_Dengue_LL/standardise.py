@@ -9,6 +9,8 @@ import uuid
 from functions import *
 
 # 0 - IMPORTING GLOBAL VARS FROM METADATA.YAML
+
+# CHANGE - Import from Github
 with open("metadata.yaml") as f:
     D=yaml.safe_load(f)
 
