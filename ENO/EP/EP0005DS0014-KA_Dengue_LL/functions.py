@@ -522,11 +522,11 @@ def dist_mapping(stateID:str, districtName:str, df: pd.DataFrame, threshold:int)
         return (pd.NA, "admin_0")
     
     if stateID=="state_29":
-        if re.search("gulbarga", districtName, re.IGNORECASE):
-            districtName="KALABURAGI"
-
-        if re.search("BBMP", districtName, re.IGNORECASE):
-            districtName="BENGALURU URBAN"
+        districtName=re.sub(r"gulbarga", "KALABURAGI", districtName, re.IGNORECASE)
+        districtName=re.sub(r"\(?\sU\)?$", " URBAN", districtName, re.IGNORECASE)
+        districtName=re.sub(r"\(?\sR\)?$", " RURAL", districtName, re.IGNORECASE)
+        districtName=re.sub(r"Bijapur", "VIJAYAPURA", districtName, re.IGNORECASE)
+        districtName=re.sub(r"B[ae]ngal[ou]r[ue] City|BBMP", "BENGALURU URBAN", districtName re.IGNORECASE)
 
     districts=df[df["parentID"]==stateID]["regionName"].to_list()
     match=process.extractOne(districtName, districts, score_cutoff=threshold)
@@ -554,8 +554,8 @@ def subdist_ulb_mapping(districtID:str, subdistName:str, df:pd.DataFrame, thresh
     if pd.isna(subdistName):
         return (pd.NA, "admin_0")
     
-    subdistName=re.sub(r'\sU$'," URBAN", subdistName)
-    subdistName=re.sub(r'\sR$'," RURAL", subdistName)
+    subdistName=re.sub(r'\(?\sU\)?$'," URBAN", subdistName, re.IGNORECASE)
+    subdistName=re.sub(r'\(?\sR\)?$'," RURAL", subdistName, re.IGNORECASE)
     subdistricts=df[df["parentID"]==districtID]["regionName"].to_list()
     match=process.extractOne(subdistName, subdistricts, score_cutoff=threshold)
     if match:
