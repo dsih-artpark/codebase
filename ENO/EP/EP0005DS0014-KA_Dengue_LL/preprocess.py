@@ -72,11 +72,8 @@ for file in os.listdir(f"./{CURRENT_YEAR}"):
         df.dropna(how="all", axis=0, inplace=True)
         df.dropna(how="all", axis=1,inplace=True)
 
-        # checking if dataframe is valid
-        try:
-            assert len(df)>=1
-        except AssertionError:
-            print("Empty sheet")
+        # skip if file is empty
+        if len(df)==0:
             continue
 
         # append district to master
