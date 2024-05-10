@@ -521,12 +521,11 @@ def dist_mapping(stateID:str, districtName:str, df: pd.DataFrame, threshold:int)
     if pd.isna(districtName):
         return (pd.NA, "admin_0")
     
-    if stateID=="state_29":
-        districtName=re.sub(r"gulbarga", "KALABURAGI", districtName, re.IGNORECASE)
-        districtName=re.sub(r"\(?\sU\)?$", " URBAN", districtName, re.IGNORECASE)
-        districtName=re.sub(r"\(?\sR\)?$", " RURAL", districtName, re.IGNORECASE)
-        districtName=re.sub(r"Bijapur", "VIJAYAPURA", districtName, re.IGNORECASE)
-        districtName=re.sub(r"B[ae]ngal[ou]r[ue] City|BBMP", "BENGALURU URBAN", districtName, re.IGNORECASE)
+    districtName=re.sub(r"gulbarga", "KALABURAGI", districtName, re.IGNORECASE)
+    districtName=re.sub(r"\(?\sU\)?$", " URBAN", districtName, re.IGNORECASE)
+    districtName=re.sub(r"\(?\sR\)?$", " RURAL", districtName, re.IGNORECASE)
+    districtName=re.sub(r"Bijapur", "VIJAYAPURA", districtName, re.IGNORECASE)
+    districtName=re.sub(r"B[ae]ngal[ou]r[ue] City|BBMP", "BENGALURU URBAN", districtName, re.IGNORECASE)
 
     districts=df[df["parentID"]==stateID]["regionName"].to_list()
     match=process.extractOne(districtName, districts, score_cutoff=threshold)
