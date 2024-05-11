@@ -76,20 +76,21 @@ datevars=["event.symptomOnsetDate", "event.test.sampleCollectionDate","event.tes
 new_dates=df.apply(lambda x: fix_symptom_date(x["event.symptomOnsetDate"], x["event.test.resultDate"]), axis=1)
 df["event.symptomOnsetDate"], df["event.test.resultDate"] = zip(*new_dates)
 
-# Then, string clean dates
+# Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
 for var in datevars:
     df[var]=df[var].apply(lambda x: string_clean_dates(x))
+    df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
 
 # Then, carry out year and date logical checks and fixes on symptom and sample date first
-result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"], CURRENT_YEAR), axis=1)
+result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)
 df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
 
 # Then, carry out year and date logical checks and fixes on symptom and sample date first
-result=df.apply(lambda x: fix_two_dates(x["event.test.sampleCollectionDate"], x["event.test.resultDate"], CURRENT_YEAR), axis=1)
+result=df.apply(lambda x: fix_two_dates(x["event.test.sampleCollectionDate"], x["event.test.resultDate"]), axis=1)
 df["event.test.sampleCollectionDate"], df["event.test.resultDate"] = zip(*result)
 
 # One last time on symptom and sample date..for convergence..miracles do happen! 
-result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"], CURRENT_YEAR), axis=1)
+result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)
 df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
 
 # format dates to ISO format

@@ -361,66 +361,56 @@ def string_clean_dates(date) -> datetime:
         return pd.NA
 
 
-def fix_two_dates(earlyDate:datetime.datetime, lateDate: datetime.datetime, current_year: int) -> tuple:
+def fix_year_hist(Date:datetime.datetime, current_year: int) -> datetime.datetime:
+    """Fixes year to current year/next year/previous year where year is not equal to the current year
+
+    Args:
+        Date (datetime.datetime): date variable in datetime format
+        current_year (int): year if the file
+
+    Returns:
+        tuple: clean date with year = current/next/previous
+    """
+    
+    if pd.isna(Date):
+        return (pd.NA)
+    
+    assert isinstance(Date, datetime.datetime) and isinstance(current_year, int), "Input date and int year"
+
+    
+    # if first date is not null, and year is not current year
+    if Date.year!=current_year:
+        ## set year to current year if month is not Jan or Dec
+        if Date.month!=1 and Date.month!=12:
+            Date=datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+        else:
+        ## if month is Jan or Dec, calculate the diff b/w the year and current year
+            year_diff=(Date.year - current_year)
+            # if diff greater than 1 - i.e., not from previous or next year, set year to current year
+            if abs(year_diff)>1:
+                Date=datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+            # if date is from previous or next year - 
+            ## if month is dec, set to previous year
+            elif Date.month==12:
+                Date=datetime.datetime(day=Date.day, month=Date.month, year=current_year-1)
+            ## else (month is jan), set to next year
+            else:
+                Date=datetime.datetime(day=Date.day, month=Date.month, year=current_year+1)
+
+    return (Date)
+
+def fix_two_dates(earlyDate:datetime.datetime, lateDate: datetime.datetime) -> tuple:
     """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping
 
     Args:
         earlyDate (datetime): First date in sequence (symptom date or sample date)
         lateDate (datetime): Second date in sequence (sample date or result date)
-        current_year (int): Year of file in which case is present
 
     Returns:
         tuple: If logical errors can be fixed, returns updated date(s). Else, returns original dates.
     """
 
     assert (isinstance(lateDate, datetime.datetime) or pd.isna(lateDate)) and (isinstance(earlyDate, datetime.datetime) or pd.isna(earlyDate)), "Format the dates before applying this function"
-    assert isinstance(current_year, int), "Year should be an integer"
-
-    # Fix Year
-
-    # Early date
-    # for null values, return 
-    if pd.isna(earlyDate) and pd.isna(lateDate):
-        return (pd.NA, pd.NA)
-    
-    # if first date is not null, and year is not current year
-    if not pd.isna(earlyDate) and earlyDate.year!=current_year:
-        ## set year to current year if month is not Jan or Dec
-        if earlyDate.month!=1 and earlyDate.month!=12:
-            earlyDate=datetime.datetime(day=earlyDate.day, month=earlyDate.month, year=current_year)
-        else:
-        ## if month is Jan or Dec, calculate the diff b/w the year and current year
-            year_diff=(earlyDate.year - current_year)
-            # if diff greater than 1 - i.e., not from previous or next year, set year to current year
-            if abs(year_diff)>1:
-                earlyDate=datetime.datetime(day=earlyDate.day, month=earlyDate.month, year=current_year)
-
-    # Late date
-    # if first date is not null, and year is not current year
-    if not pd.isna(lateDate) and lateDate.year!=current_year:
-        ## set year to current year if month is not Jan or Dec
-        if lateDate.month!=1 and lateDate.month!=12:
-            lateDate=datetime.datetime(day=lateDate.day, month=lateDate.month, year=current_year)
-        else:
-        ## if month is Jan or Dec, calculate the diff b/w the year and current year
-            year_diff=(lateDate.year - current_year)
-            # if diff greater than 1 - i.e., not from previous or next year, set year to current year
-            if abs(year_diff)>1:
-                lateDate=datetime.datetime(day=lateDate.day, month=lateDate.month, year=current_year)
-    
-    # Pending cases are of dates with year = current year-1 or current year+1
-    # if month is Dec, set to previous year. if month is Jan, set to next year
-    if not pd.isna(earlyDate) and earlyDate.year!=current_year:
-        if earlyDate.month==12:
-            earlyDate=datetime.datetime(day=earlyDate.day, month=earlyDate.month, year=current_year-1)
-        elif earlyDate.month==1:
-            earlyDate=datetime.datetime(day=earlyDate.day, month=earlyDate.month, year=current_year+1)
-        
-    if not pd.isna(lateDate) and lateDate.year!=current_year:
-        if lateDate.month==12:
-            lateDate=datetime.datetime(day=lateDate.day, month=lateDate.month, year=current_year-1)
-        elif lateDate.month==1:
-            lateDate=datetime.datetime(day=lateDate.day, month=lateDate.month, year=current_year+1)
 
     # Fix dates
     ## if any of the dates is na, return dates as is
@@ -521,11 +511,12 @@ def dist_mapping(stateID:str, districtName:str, df: pd.DataFrame, threshold:int)
     if pd.isna(districtName):
         return (pd.NA, "admin_0")
     
-    districtName=re.sub(r"gulbarga", "KALABURAGI", districtName, re.IGNORECASE)
-    districtName=re.sub(r"\(?\sU\)?$", " URBAN", districtName, re.IGNORECASE)
-    districtName=re.sub(r"\(?\sR\)?$", " RURAL", districtName, re.IGNORECASE)
-    districtName=re.sub(r"Bijapur", "VIJAYAPURA", districtName, re.IGNORECASE)
-    districtName=re.sub(r"B[ae]ngal[ou]r[ue] City|BBMP", "BENGALURU URBAN", districtName, re.IGNORECASE)
+    districtName=districtName.upper().strip()
+    districtName=re.sub(r"GULBARGA", "KALABURAGI", districtName)
+    districtName=re.sub(r"\(?\sU\)?$", " URBAN", districtName)
+    districtName=re.sub(r"\(?\sR\)?$", " RURAL", districtName)
+    districtName=re.sub(r"BIJAPUR", "VIJAYAPURA", districtName)
+    districtName=re.sub(r"B[AE]NGAL[OU]R[UE]\s?C?I?T?Y?|BBMP", "BENGALURU URBAN", districtName)
 
     districts=df[df["parentID"]==stateID]["regionName"].to_list()
     match=process.extractOne(districtName, districts, score_cutoff=threshold)
@@ -553,6 +544,7 @@ def subdist_ulb_mapping(districtID:str, subdistName:str, df:pd.DataFrame, thresh
     if pd.isna(subdistName):
         return (pd.NA, "admin_0")
     
+    subdistName=subdistName.upper().strip()
     subdistName=re.sub(r'\(?\sU\)?$'," URBAN", subdistName, re.IGNORECASE)
     subdistName=re.sub(r'\(?\sR\)?$'," RURAL", subdistName, re.IGNORECASE)
     subdistricts=df[df["parentID"]==districtID]["regionName"].to_list()
@@ -579,6 +571,7 @@ def village_ward_mapping(subdistID:str, villageName:str, df:pd.DataFrame, thresh
     if pd.isna(villageName):
         return (pd.NA, "admin_0")
 
+    villageName=villageName.upper().strip()
     villages=df[df["parentID"]==subdistID]["regionName"].to_list()
     match=process.extractOne(villageName, villages, score_cutoff=threshold)
     if match:
