@@ -5,26 +5,7 @@ import yaml
 from fuzzywuzzy import process
 import numpy as np
 
-
-# Functions:
-def map_columns(colname:str, map_dict: dict) -> str: 
-    """_summary_
-
-    Args:
-        colname (str): Current column in DataFrame
-        map (dict): Dictionary mapping of preprocessed col names to standardised col names
-
-    Returns:
-        str: Standardised column name
-    """
-    colname=re.sub(r"[^\w\s]","", colname.lower().lstrip().rstrip())
-    colname= re.sub(r"\s\s"," ", colname.lower().lstrip().rstrip())
-    colname=re.sub(r"\s","_", colname)
-
-    for key, values in map_dict.items():
-        if colname in values:
-            return key
-    return colname
+from functions import *
 
 
 # SETTING UP CONFIG
@@ -65,114 +46,51 @@ for col in master_cols:
         main_df[col]=master_colval[col]
 main_df=main_df[master_cols]
 
-
 # DROP INVALID ROWS
-main_df.dropna(subset=["location.village.name", "survey.housesVisited"], inplace=True)
-main_df=main_df[main_df["location.district.name"]!="Total"]
-
+main_df.dropna(subset=["location.admin5.name", "survey.housesVisited"], inplace=True)
+main_df=main_df[main_df["location.admin2.name"]!="Total"]
 
 # GEOMAPPING
 regions=pd.read_csv("regionids.csv")
 
-# some manual cleaning - dist & subdist mapping 
-main_df["location.district.ID"]="district_539"
-main_df["location.subdistrict.name"]=main_df["location.subdistrict.name"].str.replace("C.R.Patna","CHANNARAYAPATNA")
-main_df["location.subdistrict.name"]=main_df["location.subdistrict.name"].str.replace("C.R.PATNA","CHANNARAYAPATNA")
-main_df["location.subdistrict.name"]=main_df["location.subdistrict.name"].str.replace("H N PURA","HOLE NARSIPUR")
-main_df["location.subdistrict.name"]=main_df["location.subdistrict.name"].str.replace("S K PURA","SAKLESHPUR")
+# some manual cleaning - dist & subdist mapping
 
-subdist=regions[regions["parentID"]=="district_539"]
+main_df.loc[main_df["location.admin2.name"]=="BBMP", "location.admin3.name"]="BBMP"
 
-def mapsubdist(subdistname, df):
-    matches=df["regionName"].to_list()
+# Map district name to standardised LGD name and code
+dists=main_df.apply(lambda x: dist_mapping(x["location.admin1.ID"], x["location.admin2.name"], regions, 65), axis=1)
+main_df["location.admin2.name"], main_df["location.admin2.ID"]=zip(*dists)
 
-    match=process.extractOne(subdistname, matches, score_cutoff=65)
-
-    if match:
-        return (match[0], df[df["regionName"]==match[0]]["regionID"].values[0])
-    else:
-        return subdistname, np.nan
-
-res=main_df["location.subdistrict.name"].apply(lambda x: mapsubdist(x, subdist))
-main_df["location.subdistrict.name"], main_df["location.subdistrict.ID"]=zip(*res)
-
-villages=regions[regions["parentID"].isin(main_df["location.subdistrict.ID"].unique())]
-
-villages[(villages["parentID"]=="subdistrict_5557") & (villages["regionName"]=="BEDACHAVALLI")]
+main_df[main_df["location.admin2.ID"]=="admin_0"]
 
 
-def village_map(villageName, subdistID, df):
-    matches=df[df["parentID"]==subdistID]["regionName"].to_list()
-    match=process.extractOne(villageName, matches, score_cutoff=95)
-    if match:
-        return (match[0], df[(df["parentID"]==subdistID) & (df["regionName"]==match[0])]["regionID"].values[0], subdistID)
-    else:
-        match=process.extractBests(villageName, df["regionName"].to_list(), score_cutoff=95)
-        if match:
-            if len(match)==1:
-                return (match[0][0], df[df["regionName"]==match[0][0]]["regionID"].values[0], df[df["regionName"]==match[0][0]]["parentID"].values[0])
-    return (villageName, np.nan, subdistID)
+# Map subdistrict/ulb name to standardised LGD name and code
+subdist=main_df.apply(lambda x: subdist_ulb_mapping(x["location.admin2.ID"], x["location.admin3.name"], regions, 
+65), axis=1)
+main_df["location.admin3.name"], main_df["location.admin3.ID"]=zip(*subdist)
 
+# Map village/ward name to standardised LGD name and code
+villages=main_df.apply(lambda x: village_ward_mapping(x["location.admin3.ID"], x["location.admin5.name"], regions, 65 ), axis=1)
+main_df["location.admin5.name"], main_df["location.admin5.ID"]=zip(*villages)
 
-res=main_df.apply(lambda x: village_map(x["location.village.name"], x["location.subdistrict.ID"], villages), axis=1)
+# Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
+main_df["location.admin.hierarchy"]=main_df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("REVENUE" if x.startswith("subdistrict") else "admin_0"))
 
-main_df["location.village.name"].isna().sum()
-main_df["location.village.name"]
-village_map("HUVINAHALLI", "subdistrict_5553", villages)
-main_df[["location.village.name", "location.subdistrict.ID"]]
-
-res=main_df.apply(lambda x: village_map(x["location.village.name"], x["location.village.ID"], x["location.subdistrict.ID"],  D), axis=1)
-
-main_df["location.village.name"], main_df["location.village.ID"], main_df["location.subdistrict.ID"] = zip(*res)
-
-# update subdist name
-
-
-def mapsubdistID(subdistID, df):
-    matches=df["regionID"].to_list()
-    match=process.extractOne(subdistID, matches, score_cutoff=65)
-    if match:
-        return (match[0], df[df["regionID"]==match[0]]["regionName"].values[0])
-    else:
-        return subdistID, np.nan
-    
-res=main_df["location.subdistrict.ID"].apply(lambda x: mapsubdistID(x, subdist))
-main_df["location.subdistrict.ID"], main_df["location.subdistrict.name"]= zip(*res)
-
-main_df.loc[main_df["location.village.ID"].isna()==False, "location.admin.hierarchy"]="REVENUE"
-
-for col in main_df.columns:
-    if col.startswith("location"):
-        if main_df[col].isna().sum()>0:
-            print(col, main_df[col].isna().sum())
-
-main_df["location.ward.ID"]=main_df["location.ward.ID"].fillna("ward_-1")
-main_df["location.village.ID"]=main_df["location.village.ID"].fillna("village_-1")
-
-main_df["location.village.name"]=main_df["location.village.name"].str.upper().str.lstrip().str.rstrip()
-
-# checking that all subdistricts are included in every reporting period
-
-df.groupby(by="metadata.report")
-master=(regions[regions["parentID"]=="district_539"].regionID.unique())
-len(main_df["location.subdistrict.ID"].unique())==len(master)
-
-main_df.groupby(by="metadata.reportPeriod")["location.subdistrict.ID"].nunique()
+# Drop duplicates across all vars after standardisation
+main_df.drop_duplicates(inplace=True)
 
 # Fixing dates
 main_df["metadata.reportPeriod"]=main_df["metadata.reportPeriod"].str.replace(".","-")
-
 main_df["metadata.reportPeriod"]=main_df["metadata.reportPeriod"].str.split("to")
 
-main_df["metadata.reportPeriod"].unique()
 
 def date_time_set(x: list) -> tuple:
     import datetime
-    start_date=x[0].lstrip().rstrip()
-    end_date=x[1].lstrip().rstrip()
+    print(type(x))
+    start_date=x[0]
+    end_date=x[1]
     date1=datetime.date(day=int(start_date[:2]), month=int(start_date[3:5]), year=int(start_date[6:10])).isoformat()
     date2=datetime.date(day=int(end_date[:2]), month=int(end_date[3:5]), year=int(end_date[6:10])).isoformat()
-
     return([date1, date2], end_date)
 
 dates=main_df["metadata.reportPeriod"].apply(lambda x: date_time_set(x))
@@ -241,17 +159,18 @@ for col in float_cols:
 import uuid
 main_df["metadata.recordID"]=[uuid.uuid4() for i in range(len(main_df))]
 
-main_df.to_csv("source-reduction-hassan.csv", index=False)
+main_df.to_csv("source-reduction-dist.csv", index=False)
 
+main_df=pd.read_csv("source-reduction-dist.csv")
 df=pd.read_csv("source-reduction-hassan.csv")
 
-len(df[df["survey.houseIndex"]!=df["survey.houseIndex.calc"]])/len(df) *100
+main_df=main_df._append(df)
 
-len(df[df["survey.breteauIndex"]!=df["survey.breteauIndex.calc"]])/ len(df) *100
+main_df["metadata.primaryDate"]=pd.to_datetime(main_df["metadata.primaryDate"], format="mixed").dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-len(df[df["survey.containerIndex"]!=df["survey.containerIndex.calc"]])/ len(df) *100
+for col in ['location.admin2.name',  'location.admin3.name','location.admin5.name', 'location.healthcentre.phc','location.healthcentre.subcentre']:
+    main_df[col]=main_df[col].str.upper().str.strip()
 
-len(df[df["location.village.ID"]=="village_-1"])/len(df) * 100
+main_df=main_df.drop_duplicates()
 
-
-pd.DataFrame(df.groupby(by="metadata.primaryDate")[['survey.housesVisited', 'survey.housesPositive', 'survey.containersSearched', 'survey.containersPositive', 'survey.containersReduced']].sum()).reset_index().to_csv("summaries.csv", index=False)
+main_df.to_csv("source-reduction-dist.csv", index=False)
