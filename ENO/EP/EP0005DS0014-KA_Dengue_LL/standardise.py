@@ -30,7 +30,7 @@ try:
 except Exception as e:
     print(f'File did not download: {e}')
 
-regions=pd.read_csv("regions.csv")
+regions=pd.read_csv("regionids.csv")
 
 
 # 1 - STANDARDISATION
