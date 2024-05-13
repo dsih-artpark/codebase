@@ -109,7 +109,6 @@ for var in STR_VARS:
 ## Note: can be optimised to improve geo-mapping
 # Move BBMP from district to subdistrict/ulb field
 df.loc[df["location.admin2.name"]=="BBMP", "location.admin3.name"]="BBMP"
-df.loc[df["location.admin3.name"]=="BBMP", "location.admin2.name"]="BENGALURU URBAN"
 
 # Map district name to standardised LGD name and code
 dists=df.apply(lambda x: dist_mapping(x["location.admin1.ID"], x["location.admin2.name"], regions, 
