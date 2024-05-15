@@ -2,13 +2,7 @@ import pandas as pd
 import re
 import os
 import boto3
-
-## -----------------------------SETTING FILE PATHS-------------------------------- ##
-
-RAW_BUCKET='dsih-artpark-01-raw-data'
-RAW_PREFIX='EPRDS8-KA_Dengue_Chikungunya_SUM/Daily/2024/By_Day/'
 client = boto3.client('s3')
-
 
 ## -----------------------------UPLOAD-------------------------------------- ##
 
@@ -66,15 +60,15 @@ def upload_raw_summary(raw_file_path, report_date: str) -> str:
         raise Exception("Failed: Sheet not found for date.")
 
     # boto3 upload raw to aws
-    key=f"{RAW_PREFIX}{RAW_FILENAME}"
+    key=f'EPRDS8-KA_Dengue_Chikungunya_SUM/Daily/2024/By_Day/{RAW_FILENAME}'
 
-    response=client.list_objects_v2(Bucket=RAW_BUCKET,Prefix=key)
+    response=client.list_objects_v2(Bucket='dsih-artpark-01-raw-data',Prefix=key)
 
     if 'Contents' in response:
         raise Exception("Failed: File already exists in S3")
     else:
         try:
-            client.put_object(Bucket=RAW_BUCKET, Key=key)
+            client.put_object(Bucket='dsih-artpark-01-raw-data', Key=key)
         except Exception as e:
             return(f"Failed: Unable to upload to S3: {e}")
     
