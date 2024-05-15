@@ -60,15 +60,14 @@ def upload_raw_summary(raw_file_path, report_date: str) -> str:
         raise Exception("Failed: Sheet not found for date.")
 
     # boto3 upload raw to aws
-    key=f'EPRDS8-KA_Dengue_Chikungunya_SUM/Daily/2024/By_Day/{RAW_FILENAME}'
 
-    response=client.list_objects_v2(Bucket='dsih-artpark-01-raw-data',Prefix=key)
+    response=client.list_objects_v2(Bucket='dsih-artpark-01-raw-data',Prefix=f'EPRDS8-KA_Dengue_Chikungunya_SUM/Daily/{year}/By_Day/')
 
     if 'Contents' in response:
         raise Exception("Failed: File already exists in S3")
     else:
         try:
-            client.put_object(Bucket='dsih-artpark-01-raw-data', Key=key)
+            client.upload_file(Filename=RAW_FILENAME, Bucket='dsih-artpark-01-raw-data', Key=f'EPRDS8-KA_Dengue_Chikungunya_SUM/Daily/{year}/By_Day/{RAW_FILENAME}')
         except Exception as e:
             return(f"Failed: Unable to upload to S3: {e}")
     
