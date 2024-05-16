@@ -105,7 +105,7 @@ def extract_age_gender(x: str) -> tuple:
     """
 
     if not pd.isna(x):
-        match=re.search(r"([0-9]+[YyMm]?[A-Za-z]*)\/([MmFfGgBbWw]?)", str(x))
+        match=re.search(r"([0-9]+[YyMm]?[A-Za-z]*)\/([MmFfGgBbWw]?[A-Za-z]*)", str(x))
         if match:
             if match.group(1) and match.group(2):
                 return (match.group(1), match.group(2))
