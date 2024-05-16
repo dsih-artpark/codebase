@@ -508,7 +508,7 @@ def dist_mapping(stateID:str, districtName:str, df: pd.DataFrame, threshold:int)
     """
 
     if pd.isna(districtName):
-        return (pd.NA, "admin_0")
+        return (pd.NA, pd.NA)
     
     districtName=districtName.upper().strip()
     districtName=re.sub(r"GULBARGA", "KALABURAGI", districtName)
@@ -541,7 +541,7 @@ def subdist_ulb_mapping(districtID:str, subdistName:str, df:pd.DataFrame, thresh
     """
     # subdist
     if pd.isna(subdistName):
-        return (pd.NA, "admin_0")
+        return (pd.NA, pd.NA)
     
     subdistName=subdistName.upper().strip()
     subdistName=re.sub(r'\(?\sU\)?$'," URBAN", subdistName, re.IGNORECASE)
@@ -568,7 +568,7 @@ def village_ward_mapping(subdistID:str, villageName:str, df:pd.DataFrame, thresh
         tuple: (LGD village/ward name, LGD village/ward code or admin_0 if not matched)
     """
     if pd.isna(villageName):
-        return (pd.NA, "admin_0")
+        return (pd.NA, pd.NA)
 
     villageName=villageName.upper().strip()
     villages=df[df["parentID"]==subdistID]["regionName"].to_list()
