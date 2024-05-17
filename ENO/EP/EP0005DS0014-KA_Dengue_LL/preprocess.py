@@ -53,7 +53,7 @@ for file in os.listdir(f"./{CURRENT_YEAR}"):
             df.rename(columns={"name":"metadata.nameAddress"}, inplace=True)
 
         # nullifying patient nameAddress that do not contain a single alphabet
-        df["metadata.nameAddress"]=df["metadata.nameAddress"].apply(lambda x: x if re.search(r"[A-Za-z]", str(x).lstrip().rstrip()) else pd.NA)
+        df["metadata.nameAddress"]=df["metadata.nameAddress"].apply(lambda x: x if re.search(r"[A-Za-z]", str(x).strip()) else pd.NA)
         
         # # dropping null patient nameAddress
         df.dropna(subset=["metadata.nameAddress"], inplace=True, how="all")   
