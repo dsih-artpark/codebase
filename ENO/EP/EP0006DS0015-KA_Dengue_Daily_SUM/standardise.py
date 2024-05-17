@@ -108,7 +108,7 @@ def standardise(raw_file_date):
     df["location.admin3.name"], df["location.admin3.ID"]=zip(*subdist)
 
     # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
-    df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("REVENUE" if x.startswith("subdistrict") else "admin_0"))
+    df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: pd.NA if pd.isna(x) else "ULB" if x.startswith("ulb") else "REVENUE" if x.startswith("subdistrict") else "admin_0")
 
     # Drop duplicates across all vars after standardisation
     df.drop_duplicates(inplace=True)
@@ -123,7 +123,7 @@ def standardise(raw_file_date):
     # Cleaning int cols
     for col in df.columns:
         if col.startswith("daily") or col.startswith("cumulative"):
-            df[col]=df[col].fillna(0)
+            df[col]=df[col].fillna(0).infer_objects(copy=False)
             df[col]=df[col].astype(int)
 
     # Merge with standardised dataset
