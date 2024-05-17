@@ -126,8 +126,8 @@ df["location.admin3.name"], df["location.admin3.ID"]=zip(*subdist)
 villages=df.apply(lambda x: village_ward_mapping(x["location.admin3.ID"], x["location.admin5.name"], regions, THRESHOLDS["village"] ), axis=1)
 df["location.admin5.name"], df["location.admin5.ID"]=zip(*villages)
 
-# Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
-df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("REVENUE" if x.startswith("subdistrict") else "admin_0"))
+# Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if admin3 ID unmapped, pd.NA if admin3 name is missing)
+df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: pd.NA if pd.isna(x) else "ULB" if x.startswith("ulb") else "REVENUE" if x.startswith("subdistrict") else "admin_0")
 
 # Drop duplicates across all vars after standardisation
 df.drop_duplicates(inplace=True)
