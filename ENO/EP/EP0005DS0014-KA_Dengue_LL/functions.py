@@ -477,19 +477,19 @@ def fix_two_dates(earlyDate:datetime.datetime, lateDate: datetime.datetime) -> t
         return (earlyDate, lateDate)  # returns original dates if dates meet logical conditions
 
 def clean_strings(x:str)->str:
-    """Standardises string entries
+    """Standardises string entries by removing characters that are not an alphabet/number/hyphen
 
     Args:
         x (str): string entries in the raw dataset
 
     Returns:
-        str: null for entries without  a single alphabet, no extraspaces/whitespaces, upper case 
+        str: Upper case standardised strings/pd.NA
     """
 
     if isinstance(x, str):
         if re.search(r'[A-Za-z]', x):
-            x=re.sub(r'[\.\,\-\)\(]',' ', x)
-            x=re.sub(r'[^a-zA-Z0-9\s]+', '', x)
+            x=re.sub(r'[\.\,\)\(]',' ', x)
+            x=re.sub(r'[^a-zA-Z0-9\-\s]+', '', x)
             x=re.sub(r'\s+', ' ', x).strip()
             return x.lstrip().rstrip().upper()
     return pd.NA
