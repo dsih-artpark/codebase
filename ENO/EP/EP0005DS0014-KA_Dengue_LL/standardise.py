@@ -95,7 +95,7 @@ df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*resul
 
 # format dates to ISO format
 for var in datevars:
-    df[var]=pd.to_datetime(df[var]).strftime('%Y-%m-%dT%H:%M:%SZ')
+    df[var]=pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 # Setting primary date - symptom date > sample date > result date
 df["metadata.primaryDate"]=df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
