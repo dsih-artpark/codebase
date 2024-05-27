@@ -8,10 +8,6 @@ import boto3
 from fuzzywuzzy import process
 import uuid
 import pandas as pd
-from googlemaps import Client as GoogleMaps
-import googlemaps
-import gmaps
-import subprocess
 
 # 00 - PREPROCESSING (preprocess.py)
 
