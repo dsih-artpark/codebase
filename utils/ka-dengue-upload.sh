@@ -11,7 +11,7 @@
 set -x
 
 # Create a log file
-log="${HOME}/ka-dengue-upload-log.txt"
+log="${HOME}/Desktop/ka-dengue-upload/ka-dengue-upload-log.log"
 
 # Paths to AWS S3 raw folders where data is to be uploaded
 ka_ll_path="dsih-artpark-01-raw-data/EPRDS7-KA_Dengue_Chikungunya_LL/"
