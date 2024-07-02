@@ -130,6 +130,13 @@ def standardise_prism_app(*, df: pd.DataFrame,
             else:
                 logging.info(f"Adding col {col} without default value")
                 df[col]=pd.NA
+        if col in df.columns:
+            if data_dict[col]["access"]:
+                pass
+            else:
+                logging.info(f"Removing pii column: {col}")
+                df.drop(columns=[col], inplace=True)
+                
 
     # get ward name, ID, zone ID then retrieve zone name
     res=df["location.admin5.name"].apply(lambda x: get_ward_zone(x, wards_map, wards_map.keys()))
