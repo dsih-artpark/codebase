@@ -1,22 +1,5 @@
 #!/bin/bash
 
-# INSTRUCTIONS FOR RUNNING THE SCRIPT 
-# ARGS ARE OPTIONAL:
-# FIRST ARG = Path to zip to be provided if not Downloads 
-# SECOND ARG = File/email date to be provided if not in zip folder name
-
-# e.g., path_to_script.sh path_to_zip_dir.sh yyyy-mm-dd 
-
-# Explicitly prints outputs
-# set -x
-
-# Create a log file
-log="${HOME}/Desktop/ka-dengue/upload.log"
-
-date >> "$log"
-
-rm *.xlsx
-
 # Paths to AWS S3 raw folders where data is to be uploaded
 bucket="dsih-artpark-01-raw-data"
 # to be suffixed with year
@@ -34,8 +17,11 @@ else
     exit 1
 fi
 
+# Removing existing .xlsx files
+rm *.xlsx
+~
 # Find the latest added zip folder starting with "dailyreportof" (if multiple, else picks up only folder)
-latest_folder=$(ls -t "${dir}" | grep 'zip$' | grep '^dailyreportof' | head -n 1)
+latest_folder=$(ls -t "${dir}" | grep "zip$" | head -n 1)
 
 # If no folder is found, log it and exit
 if [ -z "$latest_folder" ]; then
@@ -78,6 +64,8 @@ tag_key="${current_year}-${current_month}-${current_date}"
 # #Extract the zip folder into a folder with the same name, excl. .zip extension
 unzip -q "${dir}${latest_folder}"
 
+unzipped_folder=${dir}${latest_folder%.*}
+
 # Create an array with the list of files in the unzipped directory
 files=()
 while IFS= read -r -d '' file; do
@@ -86,34 +74,34 @@ while IFS= read -r -d '' file; do
 done < <(find . -maxdepth 1 -type f -name "*.xlsx" -print0)
 
 if [ ${#files[@]} -ne 5 ]; then
-  echo "Number of files in dir is not 5. Check for missing files/remove extra files. EXIT." | tee -a "$log"
-  exit 1
+  echo "Number of files in dir is not 5. Check for missing files/remove extra files." | tee -a "$log"
 fi
+
+count=0
 
 # Rename, upload, tag for LL and summ
 for file in "${files[@]}"; do
     if echo "$file" | grep -q '^A-1'; then
         new_name="${current_year}A1.xlsx"
-        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log"
+        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log"  && ((count++))
     elif echo "$file" | grep -q '^B-1'; then
         new_name="${current_year}B1.xlsx"
-        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log"
+        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log" && ((count++))
     elif echo "$file" | grep -q '^A-2'; then
         new_name="${current_year}A2.xlsx"
-        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log"
+        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log" && ((count++))
     elif echo "$file" | grep -q '^B-2'; then
         new_name="${current_year}B2.xlsx"
-        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log"
+        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${ll_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log" && ((count++))
     elif echo "$file" | grep -q '^[0-9]'; then
         new_name="${current_year}-${current_month}.xlsx"
-        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${sum_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${sum_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log"
+        mv "$file" "$new_name" && aws s3 cp "$new_name" "s3://${bucket}/${sum_prefix}/${current_year}/${new_name}" && aws s3api put-object-tagging --bucket "${bucket}" --key "${sum_prefix}/${current_year}/${new_name}" --tagging "TagSet=[{Key=${tag_key},Value=''}]" && echo "$new_name uploaded and tagged" | tee -a "$log" 2>> "$log" && ((count++))
     else 
         echo "Skipping file '$file' - does not match any pattern - start with A-1, B-1, A-2, B-2 or in format 06 - June 2024 F24. Correct format to startin" | tee -a "$error_log"
         continue
     fi
 done
 
-rm *.zip
-rm *.xlsx
-
-
+if [ "$count" -ge 4 ]; then
+    rm .*zip
+fi
