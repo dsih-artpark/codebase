@@ -5,16 +5,20 @@ from fuzzywuzzy import process
 import yaml
 import datetime
 import boto3
+from epipipeline import get_regionIDs
 from epipipeline.standardise import *
 from epipipeline.preprocess import *
 from epipipeline.standardise.gis import *
 import uuid
+from dataio.download import fetch_data_documentation
 # client = boto3.client('s3')
 
 ## -----------------------------SETTING GLOBALS-------------------------------- ##
 
-with open("metadata.yaml") as f:
-    D = yaml.safe_load(f)
+D = fetch_data_documentation(dsid="EP0006DS0015")
+
+# with open("metadata.yaml") as f:
+#     D=yaml.safe_load(f)
 
 
 COLUMN_MAP = D["tables"]["ka-dengue-daily-summary"]["config"]["column_mapping"]
@@ -27,11 +31,7 @@ COLS = D["tables"]["ka-dengue-daily-summary"]["config"]["max_col_index"]
 MIN_COLS = D["tables"]["ka-dengue-daily-summary"]["config"]["min_cols"]
 THRESHOLDS = D["tables"]["ka-dengue-daily-summary"]["config"]["thresholds"]
 
-# client.download_file(Bucket='dsih-artpark-03-standardised-data', Key='GS0015DS0034-LGD_Region_IDs_and_Names/regionids.csv', Filename='regionids.csv')
-
-
-regions = pd.read_csv("regions/regionids2.csv")
-
+raw_file_name = "2024-08-07.xlsx"
 
 
 ## -----------------------------PREPROCESS-------------------------------------- ##
@@ -87,7 +87,9 @@ def standardise(raw_file_name):
 
     # check that min cols are present
     if not set(MIN_COLS).issubset(set(df.columns)):
-        raise Exception(f"File is missing minimum required columns - {set(MIN_COLS).difference(set(df.columns))}")
+        raise Exception(f"File is missing minimum required columns - {set(MIN_COLS).difference(set(df.columns))}. Current columns are: {df.columns}")
+
+
 
     # add standardised cols from metadata.yaml
     # adding standard list of columns from metadata that are not present in the dataset
@@ -114,7 +116,7 @@ def standardise(raw_file_name):
 
     # geo-mapping - districts
     # Map district name to standardised LGD name and code
-    dists = df.apply(lambda x: dist_mapping(stateID=x["location.admin1.ID"], districtName=x["location.admin2.name"], df=regions,
+    dists = df.apply(lambda x: dist_mapping(stateID=x["location.admin1.ID"], districtName=x["location.admin2.name"], df=regionids_df,
                                             threshold=THRESHOLDS["district"]), axis=1)
 
     df["location.admin2.name"], df["location.admin2.ID"] = zip(*dists)
@@ -124,7 +126,7 @@ def standardise(raw_file_name):
 
     # Map subdistrict/ulb name to standardised LGD name and code
 
-    subdist = df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regions,
+    subdist = df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regionids_df,
                                                      threshold=THRESHOLDS["subdistrict"]), axis=1)
     df["location.admin3.name"], df["location.admin3.ID"] = zip(*subdist)
 
