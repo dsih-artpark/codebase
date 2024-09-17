@@ -22,8 +22,8 @@ else
         dir="${HOME}/Desktop/ka-dengue/"
     else
         # If not, create the directory and set it
-        dir="${HOME}/Desktop/ka-dengue/"
-        mkdir -p "$dir"
+        echo "Input the directory where the zip folder is, or create a directory "ka-dengue" in your Desktop. EXIT."  | tee -a "$log"
+        exit 1
     fi
 fi
 
