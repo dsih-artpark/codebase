@@ -5,9 +5,11 @@ from dataio.download import fetch_data_documentation, download_dataset_v2
 import pandas as pd
 import boto3
 import logging
+import os
+
 
 # set-up logger
-logging.getLogger("epipipeline.standardise.dengue.ihip")
+logging.getLogger("epipipeline.standardise.dengue.ihip.log")
 
 # capture warnings and redirect them to the logging system
 logging.captureWarnings(True)
@@ -38,7 +40,6 @@ KEY = D["admin"]["dsid"]["standardised"]+"-"+CONFIG["upload"]["prefix"]+"/"+FILE
 
 MIN_RESULT_DATE = pd.to_datetime("2024-07-16")
 
-
 # Fetch raw data for GSHEET
 raw_dict = fetch_ihip_v2(json_cred = CREDENTIALS_PATH, gsheet = GSHEET_LINK, raw_sheets = EXPECTED_SHEETS)
 
@@ -61,7 +62,6 @@ except Exception as e:
     logging.warning(f"Failed to upload to AWS S3 - {e}")
 
 
-
-
-
+# Delete csv
+os.remove(FILE_NAME)
 
