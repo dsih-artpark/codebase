@@ -1,14 +1,14 @@
 import pandas as pd
 import re
 from dataio.download import (download_dataset_v2, fetch_file_list, fetch_data_documentation)
-import yaml
 import boto3
 import datetime
 import logging
 from epipipeline import get_regionIDs
 from epipipeline.preprocess.dengue.karnataka import fetch_ka_summary_v2
-from epipipeline.preprocess.dengue.karnataka import fetch_ka_summary_v2
+from epipipeline.standardise.dengue.karnataka import standardise_ka_summary_v2
 import os
+
 
 # set-up logger
 logging.getLogger("epipipeline.standardise.dengue.karnataka.log")
@@ -36,9 +36,9 @@ BUCKET_NAME = CONFIG["upload"]["bucket"]
 RDS_ID = D["admin"]["dsid"]["raw"]
 DSID = D["admin"]["dsid"]["standardised"]
 
-raw_file = "2024-08.xlsx"   # change for latest file
+raw_file = "2024-09.xlsx"   # change for latest file
 prefix_name = raw_file[:4] # change for latest file
-latest_date = "2024-08-28"  # change for latest file
+latest_date = "2024-09-18"  # change for latest file
 
 # get the date of the latest file standardised
 files = fetch_file_list(dsid=DSID, prefix=prefix_name, data_state="standardised")
@@ -83,7 +83,8 @@ for key in std_dict:
     except Exception as e:
         logging.warning(f"Failed to upload to AWS S3 - {e}")
 
-    #os.remove(f"{key}.csv")
+    os.remove(f"{key}.csv")
 
 
 ###---------------IF CONVERTED FROM PDF, SAVE IT AS AN EXCEL WORKBOOK WITH THE DATE, RUN FUNCTIONS ABOVE---------------###
+
