@@ -131,7 +131,7 @@ for file in "${files[@]}"; do
         aws s3 cp "${unzipped_folder}/$new_name" "s3://${bucket}/${ll_prefix}/${current_year}/$new_name"
         aws s3api put-object-tagging --bucket "$bucket" --key "${ll_prefix}/${current_year}/$new_name" --tagging "TagSet=[{Key=${tag_key},Value=''}]"
         ((count++))
-    elif echo "$file" | grep -q '^[0-9]'; then
+    elif echo "$file" | grep -q '^[0-9A-Za-z]'; then
         new_name="${current_year}-${current_month}.xlsx"
         mv "${unzipped_folder}/$file" "${unzipped_folder}/$new_name"
         aws s3 cp "${unzipped_folder}/$new_name" "s3://${bucket}/${sum_prefix}/${current_year}/$new_name"
