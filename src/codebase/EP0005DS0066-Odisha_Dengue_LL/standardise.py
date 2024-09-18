@@ -9,11 +9,13 @@ import uuid
 
 # set-up metadata from metadata.yaml
 metadata=fetch_data_documentation(dsid = "EP0005DS0066")
-metadata = metadata["tables"]["odisha_dengue_ll"]
+D = metadata["tables"]["odisha_dengue_ll"]
 # dependent on metadata above
-data_dictionary = metadata["data_dictionary"]
-dsid = metadata["admin"]["dsid"]["preprocessed"]
-str_cols = metadata["admin"]["config"]["str_cols"]
+data_dictionary = D["data_dictionary"]
+dsid = D["admin"]["dsid"]["preprocessed"]
+str_cols = D["admin"]["config"]["str_cols"]
+state_name=D["admin"]["config"]["state_name"]
+state_ID=D["admin"]["config"]["state_ID"]
 
 # regions
 download_dataset_v2(dsid="GS0015DS0034")
@@ -81,9 +83,13 @@ for file in os.listdir(f"data/{pp_csvs}"):
 
         ## GEOGRAPHY
         # districts
-        res=df.apply(lambda x: dist_mapping(stateID=x["location.admin1.ID"], districtName=x["location.admin2.name"], df=regions_df), axis=1)
-        df["location.admin2.name_new"], df["location.admin2.ID_new"]=zip(*res)
 
+        res=df.apply(lambda x: dist_mapping(stateID=state_ID, districtName=x["location.admin2.name"], df=regions_df), axis=1)
+        df["location.admin2.name"], df["location.admin2.ID"]=zip(*res)
+
+        # drop districts named as out of state
+        df = df[~df["location.admin2.name"].str.contains(r'Out Of State', case=False, na=False)]
+        
         # subdists
         res=df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regions_df), axis=1)
         df["location.admin3.name"], df["location.admin3.ID"]=zip(*res)
@@ -92,18 +98,21 @@ for file in os.listdir(f"data/{pp_csvs}"):
         res=df.apply(lambda x: village_ward_mapping(subdistID=x["location.admin3.ID"], villageName=x["location.admin5.name"], df=regions_df), axis=1)
         df["location.admin5.name"], df["location.admin5.ID"]= zip(*res)
 
+        # state is set to Odisha where district code is not na, 
+        df.loc[~df["location.admin2.ID"].isna(), ["location.admin1.ID", "location.admin1.name"]] = [state_ID, state_name]
+
         # admin hierarchy
         df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "admin_0" if pd.isnull(x) else ("Revenue" if x.startswith("subdistrict") else ("ULB" if x.startswith("ulb") else "admin_0")))  # noqa: E501
 
         # admin coarseness
         df["location.admin.coarseness"]=df["location.admin5.ID"].fillna(df["location.admin3.ID"]).fillna(df["location.admin2.ID"]).fillna(df["location.admin1.ID"]).str.split("_").str.get(0)
 
-        # Fillna to admin_0
-        L=["location.admin2.ID", "location.admin3.ID", "location.admin5.ID"]
+        # fillnas with admin_0
 
-        for vars in L:
-            df[vars]=df[vars].fillna("admin_0")
+        for var in ["location.admin1.ID", "location.admin2.ID", "location.admin3.ID", "location.admin5.ID"]:
+             df[var]=df[var].fillna("admin_0")
 
+        # set state ID
         # filter empty rows
         df=df.dropna(how="all", axis=0)
 
@@ -128,4 +137,7 @@ for file in os.listdir(f"data/{pp_csvs}"):
 main_df = pd.concat(standardised_dict.values(), ignore_index=True)
 
 main_df.to_csv("odisha-std-ll.csv", index=False)
+
+
+
 
