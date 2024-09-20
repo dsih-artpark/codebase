@@ -77,13 +77,20 @@ for key in std_dict:
     std_df=std_dict[key]
     std_df.to_csv(f"{key}.csv", index=False)
 
+    upload=True
+
     try:
         s3.meta.client.upload_file(Filename = f"{key}.csv", Bucket= BUCKET_NAME, Key = f"{AWS_KEY}{key}.csv")
         logging.info("Successfully uploaded to AWS S3")
     except Exception as e:
+        upload=False
         logging.warning(f"Failed to upload to AWS S3 - {e}")
 
-    os.remove(f"{key}.csv")
+# remove files from folder if upload was successful
+
+if upload:
+    for key in std_dict:
+        os.remove(f"{key}.csv")
 
 
 ###---------------IF CONVERTED FROM PDF, SAVE IT AS AN EXCEL WORKBOOK WITH THE DATE, RUN FUNCTIONS ABOVE---------------###
