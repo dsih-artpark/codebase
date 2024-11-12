@@ -4,15 +4,12 @@ from epipipeline import get_regionIDs
 from dataio.download import fetch_data_documentation, download_dataset_v2
 import pandas as pd
 import boto3
-import logging
 import os
 
 
-# set-up logger
-logging.getLogger("epipipeline.standardise.dengue.ihip.log")
-
-# capture warnings and redirect them to the logging system
-logging.captureWarnings(True)
+# set-up logging
+epipipeline.logging_config.setup_logging('DEBUG')
+dataio.logging_config.setup_logging('INFO')
 
 # download the latest regionids file
 
