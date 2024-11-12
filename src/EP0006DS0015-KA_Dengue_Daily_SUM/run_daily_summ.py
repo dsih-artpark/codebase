@@ -9,6 +9,8 @@ from epipipeline.preprocess.dengue.karnataka import fetch_ka_summary_v2
 from epipipeline.standardise.dengue.karnataka import standardise_ka_summary_v2
 import os
 
+pd.set_option('future.no_silent_downcasting', True)
+
 
 # set-up logger
 logging.getLogger("epipipeline.standardise.dengue.karnataka.log")
