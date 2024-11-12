@@ -3,7 +3,6 @@ import re
 from dataio.download import (download_dataset_v2, fetch_file_list, fetch_data_documentation)
 import boto3
 import datetime
-import logging
 from epipipeline import get_regionIDs
 from epipipeline.preprocess.dengue.karnataka import fetch_ka_summary_v2
 from epipipeline.standardise.dengue.karnataka import standardise_ka_summary_v2
@@ -11,9 +10,9 @@ import os
 
 pd.set_option('future.no_silent_downcasting', True)
 
-
-# set-up logger
-logging.getLogger("epipipeline.standardise.dengue.karnataka.log")
+# set-up logging
+epipipeline.logging_config.setup_logging('DEBUG')
+dataio.logging_config.setup_logging('INFO')
 
 # capture warnings and redirect them to the logging system
 logging.captureWarnings(True)
